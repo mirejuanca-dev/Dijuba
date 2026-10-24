@@ -1,0 +1,25 @@
+{
+  "name": "Mezcla — recetas de color",
+  "short_name": "Mezcla",
+  "description": "Recetas de mezcla de pigmentos y ayudas de daltonismo a partir de una foto",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3EEE2",
+  "theme_color": "#2E4C7A",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

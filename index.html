@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mezcla — recetas de color</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2E4C7A">
+<!-- iOS: Safari no lee bien el manifest para "Añadir a pantalla de inicio", necesita estos meta aparte -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mezcla">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root{
+    --bg:#F3EEE2;
+    --ink:#2A2420;
+    --ink-soft:#6B6255;
+    --accent:#2E4C7A;
+    --accent-soft:#DCE6F0;
+    --card:#FFFDF9;
+    --border:#E3DCCB;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:480px;
+    margin:0 auto;
+    padding:28px 20px 60px;
+  }
+  h1{
+    font-family:Georgia, "Iowan Old Style", "Times New Roman", serif;
+    font-weight:400;
+    font-size:28px;
+    margin:0 0 4px;
+  }
+  .sub{
+    color:var(--ink-soft);
+    font-size:14px;
+    line-height:1.5;
+    margin:0 0 24px;
+  }
+  #photoInput{ display:none; }
+  .capture-btn{
+    display:block;
+    width:100%;
+    padding:14px 18px;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    text-align:center;
+    cursor:pointer;
+  }
+  .capture-btn:active{ opacity:0.85; }
+  .preview{
+    width:100%;
+    border-radius:10px;
+    margin-top:16px;
+    display:none;
+    cursor:crosshair;
+  }
+  .preview-wrap{
+    position:relative;
+    display:block;
+  }
+  .pick-marker{
+    position:absolute;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    border:2px solid #fff;
+    box-shadow:0 0 0 1.5px var(--ink), 0 1px 4px rgba(0,0,0,0.4);
+    transform:translate(-50%, -50%);
+    pointer-events:none;
+    display:none;
+  }
+  .section-label{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin:18px 2px 6px;
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+  }
+  #cvdCanvas{
+    width:100%;
+    border-radius:10px;
+    margin-top:10px;
+    border:1px solid var(--border);
+  }
+  .cvd-note{
+    background:var(--accent-soft);
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:13px;
+    margin-top:10px;
+    line-height:1.5;
+  }
+  .hint{
+    color:var(--ink-soft);
+    font-size:12px;
+    margin:6px 2px 0;
+    display:none;
+  }
+  .picked-card{
+    border:1.5px solid var(--accent);
+  }
+  .pill-selector{
+    display:flex;
+    gap:6px;
+    margin:24px 0 16px;
+    background:var(--accent-soft);
+    padding:4px;
+    border-radius:10px;
+  }
+  .pill-btn{
+    flex:1;
+    padding:8px 4px;
+    border:none;
+    background:transparent;
+    border-radius:7px;
+    font-size:13px;
+    color:var(--accent);
+    cursor:pointer;
+  }
+  .pill-btn.active{
+    background:#fff;
+    font-weight:600;
+  }
+  #results{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .card{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px 14px;
+  }
+  .swatch{
+    width:34px;
+    height:34px;
+    border-radius:8px;
+    flex-shrink:0;
+    margin-top:2px;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .badge{
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff;
+    font-size:12px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    margin-top:6px;
+  }
+  #mapCanvas{
+    width:100%;
+    border-radius:10px;
+    margin-top:16px;
+    display:none;
+    border:1px solid var(--border);
+  }
+  .info{ flex:1; min-width:0; }
+  .pct{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-bottom:3px;
+  }
+  .recipe{
+    font-size:14px;
+    line-height:1.4;
+  }
+  .compare{
+    display:flex;
+    gap:10px;
+    margin-top:8px;
+  }
+  .compare-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .compare-swatch{
+    width:20px;
+    height:20px;
+    border-radius:5px;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .compare-label{
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+    color:var(--ink-soft);
+    font-size:14px;
+    text-align:center;
+    padding:30px 10px;
+  }
+  .status{
+    color:var(--ink-soft);
+    font-size:13px;
+    text-align:center;
+    padding:16px 0;
+    display:none;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mezcla</h1>
+  <p class="sub">Haz una foto del paisaje que tienes delante y te digo qué colores mezclar, y en qué proporción, para conseguir esos mismos tonos.</p>
+
+  <label for="photoInput" class="capture-btn">Elegir o tomar una foto</label>
+  <input type="file" id="photoInput" accept="image/*">
+  <div class="preview-wrap" id="previewWrap">
+    <img id="preview" class="preview" alt="Vista previa de la foto">
+    <div class="pick-marker" id="pickMarker"></div>
+  </div>
+  <p class="hint" id="pickHint" style="display:none;">Toca cualquier punto de la foto para ver la receta exacta de ese color.</p>
+  <canvas id="mapCanvas" aria-label="Mapa de regiones de color numeradas"></canvas>
+
+  <div class="status" id="status">Analizando colores…</div>
+
+  <div class="pill-selector">
+    <button class="pill-btn active" data-medium="oleo">Óleo / acrílico</button>
+    <button class="pill-btn" data-medium="acuarela">Acuarela</button>
+    <button class="pill-btn" data-medium="lapiz">Lápiz</button>
+  </div>
+
+  <p class="section-label">Simulación de daltonismo (Machado, Oliveira y Fernandes, 2009)</p>
+  <div class="pill-selector">
+    <button class="pill-btn active" data-cvd="none">Visión normal</button>
+    <button class="pill-btn" data-cvd="protanopia">Protanopia</button>
+    <button class="pill-btn" data-cvd="deuteranopia">Deuteranopia</button>
+    <button class="pill-btn" data-cvd="tritanopia">Tritanopia</button>
+  </div>
+  <div class="pill-selector" id="cvdModeSelector" style="display:none;">
+    <button class="pill-btn active" data-cvdmode="simular">Simular (ver como lo vería)</button>
+    <button class="pill-btn" data-cvdmode="adaptar">Adaptar (para que distinga mejor)</button>
+  </div>
+  <div id="severityControl" style="display:none; margin-top:10px;">
+    <label style="font-size:12px; color:var(--ink-soft); display:flex; justify-content:space-between;">
+      <span>Severidad</span>
+      <span id="severityValue">1.0 (dicromacia completa)</span>
+    </label>
+    <input type="range" id="severitySlider" min="0" max="1" step="0.05" value="1" style="width:100%;">
+  </div>
+  <canvas id="cvdCanvas" style="display:none;"></canvas>
+  <div id="cvdWarning"></div>
+
+  <div id="results">
+    <div class="empty">Todavía no hay ninguna foto analizada.</div>
+  </div>
+</div>
+
+<canvas id="workCanvas" style="display:none;"></canvas>
+
+<script>
+let dominantColors = [];
+let currentMedium = 'oleo';
+let rankAssignments = null;
+let gridW = 0, gridH = 0;
+let fullCanvas = document.createElement('canvas');
+let pickedColor = null;
+
+// ---------- Captura y extracción ----------
+
+document.getElementById('photoInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const img = new Image();
+    img.onload = function(){
+      document.getElementById('preview').src = ev.target.result;
+      document.getElementById('preview').style.display = 'block';
+      document.getElementById('pickHint').style.display = 'block';
+      document.getElementById('pickMarker').style.display = 'none';
+      pickedColor = null;
+
+      const maxFullDim = 1000;
+      const fscale = Math.min(1, maxFullDim / Math.max(img.width, img.height));
+      fullCanvas.width = Math.round(img.width * fscale);
+      fullCanvas.height = Math.round(img.height * fscale);
+      fullCanvas.getContext('2d').drawImage(img, 0, 0, fullCanvas.width, fullCanvas.height);
+
+      processImage(img);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function processImage(img){
+  document.getElementById('status').style.display = 'block';
+  document.getElementById('results').innerHTML = '';
+  // dejar que el navegador pinte el estado "Analizando..." antes del trabajo pesado
+  setTimeout(function(){
+    const canvas = document.getElementById('workCanvas');
+    const maxDim = 160;
+    const scale = Math.min(maxDim / img.width, maxDim / img.height);
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+    const pixels = [];
+    for(let i = 0; i < data.length; i += 4){
+      pixels.push([data[i], data[i+1], data[i+2]]);
+    }
+
+    const kInit = 12;
+    const { clusters, assignments } = kMeans(pixels, kInit, 10);
+    const total = pixels.length;
+    const merged = mergeClusters(clusters, 32);
+
+    // quedarnos con los 5 grupos fusionados más grandes
+    const order = merged
+      .map((g, i) => ({ i, count: g.count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 7);
+
+    dominantColors = order.map(o => ({ rgb: merged[o.i].rgb, pct: 100 * merged[o.i].count / total }));
+
+    // cada cluster original -> el grupo fusionado que lo contiene -> su puesto final
+    // (si un grupo fusionado no entró en el top 5, se asigna al más parecido de los 5)
+    const origToFinalRank = new Array(kInit);
+    merged.forEach((g, gi) => {
+      const rank = order.findIndex(o => o.i === gi);
+      const finalRank = rank >= 0 ? rank : nearestRank(g.rgb, dominantColors);
+      g.members.forEach(origIdx => { origToFinalRank[origIdx] = finalRank; });
+    });
+
+    gridW = canvas.width;
+    gridH = canvas.height;
+    rankAssignments = new Uint8Array(assignments.length);
+    for(let i = 0; i < assignments.length; i++){
+      rankAssignments[i] = origToFinalRank[assignments[i]];
+    }
+
+    document.getElementById('status').style.display = 'none';
+    drawColorMap();
+    renderResults();
+    updateCvdView();
+  }, 30);
+}
+
+function mergeClusters(clusters, threshold){
+  // cada grupo empieza siendo un único cluster original; se van fusionando
+  // los dos grupos más cercanos en color mientras estén por debajo del umbral
+  let groups = clusters.map((c, i) => ({ rgb: c.rgb.slice(), count: c.count, members: [i] }));
+  let mergedSomething = true;
+  while(mergedSomething){
+    mergedSomething = false;
+    outer:
+    for(let a = 0; a < groups.length; a++){
+      for(let b = a + 1; b < groups.length; b++){
+        const dx = groups[a].rgb[0] - groups[b].rgb[0];
+        const dy = groups[a].rgb[1] - groups[b].rgb[1];
+        const dz = groups[a].rgb[2] - groups[b].rgb[2];
+        const d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        if(d < threshold){
+          const totalCount = groups[a].count + groups[b].count;
+          const newRgb = [0,1,2].map(k =>
+            Math.round((groups[a].rgb[k]*groups[a].count + groups[b].rgb[k]*groups[b].count) / totalCount)
+          );
+          groups[a] = { rgb: newRgb, count: totalCount, members: groups[a].members.concat(groups[b].members) };
+          groups.splice(b, 1);
+          mergedSomething = true;
+          break outer;
+        }
+      }
+    }
+  }
+  return groups;
+}
+
+function nearestRank(rgb, colors){
+  let best = 0, bestDist = Infinity;
+  colors.forEach((c, i) => {
+    const dx = rgb[0]-c.rgb[0], dy = rgb[1]-c.rgb[1], dz = rgb[2]-c.rgb[2];
+    const d = dx*dx + dy*dy + dz*dz;
+    if(d < bestDist){ bestDist = d; best = i; }
+  });
+  return best;
+}
+
+function kMeansPlusPlusInit(pixels, k){
+  const centroids = [pixels[Math.floor(Math.random() * pixels.length)].slice()];
+  const distSq = new Array(pixels.length).fill(Infinity);
+  for(let c = 1; c < k; c++){
+    const last = centroids[centroids.length - 1];
+    let total = 0;
+    for(let i = 0; i < pixels.length; i++){
+      const dx = pixels[i][0]-last[0], dy = pixels[i][1]-last[1], dz = pixels[i][2]-last[2];
+      const d = dx*dx + dy*dy + dz*dz;
+      if(d < distSq[i]) distSq[i] = d;
+      total += distSq[i];
+    }
+    let r = Math.random() * total;
+    let chosen = pixels.length - 1;
+    for(let i = 0; i < pixels.length; i++){
+      r -= distSq[i];
+      if(r <= 0){ chosen = i; break; }
+    }
+    centroids.push(pixels[chosen].slice());
+  }
+  return centroids;
+}
+
+function kMeans(pixels, k, iterations){
+  let centroids = kMeansPlusPlusInit(pixels, k);
+  let assignments = new Array(pixels.length).fill(0);
+
+  for(let iter = 0; iter < iterations; iter++){
+    for(let i = 0; i < pixels.length; i++){
+      let best = 0, bestDist = Infinity;
+      for(let c = 0; c < k; c++){
+        const dx = pixels[i][0] - centroids[c][0];
+        const dy = pixels[i][1] - centroids[c][1];
+        const dz = pixels[i][2] - centroids[c][2];
+        const d = dx*dx + dy*dy + dz*dz;
+        if(d < bestDist){ bestDist = d; best = c; }
+      }
+      assignments[i] = best;
+    }
+    const sums = Array.from({length: k}, () => [0,0,0,0]);
+    for(let i = 0; i < pixels.length; i++){
+      const c = assignments[i];
+      sums[c][0] += pixels[i][0];
+      sums[c][1] += pixels[i][1];
+      sums[c][2] += pixels[i][2];
+      sums[c][3] += 1;
+    }
+    for(let c = 0; c < k; c++){
+      if(sums[c][3] > 0){
+        centroids[c] = [sums[c][0]/sums[c][3], sums[c][1]/sums[c][3], sums[c][2]/sums[c][3]];
+      }
+    }
+  }
+  const counts = new Array(k).fill(0);
+  for(let i = 0; i < pixels.length; i++) counts[assignments[i]]++;
+  const clusters = centroids.map((c, i) => ({ rgb: c.map(Math.round), count: counts[i] }));
+  return { clusters, assignments };
+}
+
+// ---------- Mapa de regiones numeradas ----------
+
+function findLabelPositions(){
+  const w = gridW, h = gridH;
+  const visited = new Uint8Array(w * h);
+  const byRank = dominantColors.map(() => []);
+  const minSize = Math.max(6, Math.round(w * h * 0.006));
+
+  for(let start = 0; start < w * h; start++){
+    if(visited[start]) continue;
+    const rank = rankAssignments[start];
+    visited[start] = 1;
+    const stack = [start];
+    let sumX = 0, sumY = 0, count = 0;
+    while(stack.length){
+      const p = stack.pop();
+      const x = p % w, y = (p / w) | 0;
+      sumX += x; sumY += y; count++;
+      const neighbors = [p - 1, p + 1, p - w, p + w];
+      for(const n of neighbors){
+        if(n < 0 || n >= w * h) continue;
+        if(n % w === 0 && p % w === w - 1) continue;
+        if(n % w === w - 1 && p % w === 0) continue;
+        if(!visited[n] && rankAssignments[n] === rank){
+          visited[n] = 1;
+          stack.push(n);
+        }
+      }
+    }
+    if(count >= minSize){
+      byRank[rank].push({ x: sumX / count, y: sumY / count, size: count });
+    }
+  }
+  return byRank.map(list => list.sort((a, b) => b.size - a.size).slice(0, 2));
+}
+
+function drawColorMap(){
+  // 1. mosaico en baja resolución (un color plano por celda)
+  const small = document.createElement('canvas');
+  small.width = gridW;
+  small.height = gridH;
+  const sctx = small.getContext('2d');
+  const imgData = sctx.createImageData(gridW, gridH);
+  for(let i = 0; i < rankAssignments.length; i++){
+    const rgb = dominantColors[rankAssignments[i]].rgb;
+    imgData.data[i*4] = rgb[0];
+    imgData.data[i*4+1] = rgb[1];
+    imgData.data[i*4+2] = rgb[2];
+    imgData.data[i*4+3] = 255;
+  }
+  sctx.putImageData(imgData, 0, 0);
+
+  // 2. se escala a un lienzo visible más grande, manteniendo los bloques nítidos
+  const scale = Math.max(2, Math.round(320 / gridW));
+  const canvas = document.getElementById('mapCanvas');
+  canvas.width = gridW * scale;
+  canvas.height = gridH * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(small, 0, 0, canvas.width, canvas.height);
+  ctx.imageSmoothingEnabled = true;
+
+  // 3. números y círculos, ya a resolución normal (sin pixelar)
+  const labelSets = findLabelPositions();
+  const r = Math.max(11, Math.round(canvas.width * 0.045));
+  ctx.font = `bold ${Math.round(r * 1.1)}px -apple-system, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  labelSets.forEach((positions, rank) => {
+    positions.forEach(pos => {
+      const cx = (pos.x + 0.5) * scale;
+      const cy = (pos.y + 0.5) * scale;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill();
+      ctx.lineWidth = Math.max(1.5, r * 0.12);
+      ctx.strokeStyle = '#2A2420';
+      ctx.stroke();
+      ctx.fillStyle = '#2A2420';
+      ctx.fillText(String(rank + 1), cx, cy + 1);
+    });
+  });
+  canvas.style.display = 'block';
+}
+
+// ---------- Modelo de color (tono / blanco / negro) ----------
+
+function rgbToHsv(r, g, b){
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0;
+  const d = max - min;
+  const s = max === 0 ? 0 : d / max;
+  const v = max;
+  if(d !== 0){
+    switch(max){
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+      case g: h = ((b - r) / d + 2); break;
+      case b: h = ((r - g) / d + 4); break;
+    }
+    h *= 60;
+  }
+  return { h, s, v };
+}
+
+const PRIMARIES = [['Amarillo', 55], ['Cian', 195], ['Magenta', 320]];
+
+function hueMix(hDeg){
+  const n = PRIMARIES.length;
+  for(let i = 0; i < n; i++){
+    const [name1, h1] = PRIMARIES[i];
+    const [name2, h2raw] = PRIMARIES[(i + 1) % n];
+    const h2 = h2raw > h1 ? h2raw : h2raw + 360;
+    const ht = hDeg >= h1 ? hDeg : hDeg + 360;
+    if(ht >= h1 && ht <= h2){
+      const t = (ht - h1) / (h2 - h1);
+      const w = {};
+      PRIMARIES.forEach(p => w[p[0]] = 0);
+      w[name1] = 1 - t;
+      w[name2] = t;
+      return w;
+    }
+  }
+  const w = {};
+  PRIMARIES.forEach(p => w[p[0]] = 1 / n);
+  return w;
+}
+
+function oleoRecipe(rgb){
+  const { h, s, v } = rgbToHsv(rgb[0], rgb[1], rgb[2]);
+  const pigment = s * v, white = (1 - s) * v, black = 1 - v;
+  const hw = hueMix(h);
+  let partes = [];
+  for(const name in hw){
+    const amt = hw[name] * pigment;
+    if(amt > 0.02) partes.push([name, amt]);
+  }
+  partes.push(['Blanco', white]);
+  partes.push(['Negro', black]);
+  partes = partes.filter(p => p[1] > 0.02);
+  const total = partes.reduce((s2, p) => s2 + p[1], 0);
+  return partes.map(p => `${p[0]} ${Math.round(100 * p[1] / total)}%`).join(', ');
+}
+
+function acuarelaRecipe(rgb){
+  const { h, s, v } = rgbToHsv(rgb[0], rgb[1], rgb[2]);
+  const hw = hueMix(h);
+  const tono = Object.entries(hw)
+    .filter(([n, w]) => w > 0.03)
+    .map(([n, w]) => `${n} ${Math.round(w * 100)}%`)
+    .join(' + ');
+  let dilucion;
+  if(v > 0.8) dilucion = 'muy diluido (mucha agua)';
+  else if(v > 0.6) dilucion = 'diluido';
+  else if(v > 0.4) dilucion = 'medio, poca agua';
+  else dilucion = 'concentrado, casi sin agua';
+  const black = 1 - v;
+  const nota = black > 0.35 ? ' — toque de complementario en vez de negro' : '';
+  return `${tono} · ${dilucion}${nota}`;
+}
+
+const PENCILS = {
+  'Amarillo': [255, 224, 58],
+  'Naranja': [240, 130, 40],
+  'Rojo': [210, 40, 40],
+  'Magenta/Rosa': [215, 60, 130],
+  'Violeta': [110, 60, 150],
+  'Azul': [40, 90, 170],
+  'Cian/Turquesa': [30, 150, 170],
+  'Verde': [60, 140, 60],
+  'Verde oliva': [120, 130, 40],
+  'Marrón/Siena': [140, 90, 50],
+  'Ocre': [190, 150, 70],
+  'Gris': [140, 140, 140],
+  'Blanco (papel)': [255, 255, 255],
+  'Negro': [20, 20, 20]
+};
+
+function lapizRecipe(rgb){
+  const dists = Object.entries(PENCILS).map(([name, p]) => {
+    const d = Math.sqrt((rgb[0]-p[0])**2 + (rgb[1]-p[1])**2 + (rgb[2]-p[2])**2);
+    return [d, name];
+  }).sort((a, b) => a[0] - b[0]);
+  return `Base suave de ${dists[0][1]}, luego ${dists[1][1]} encima con más presión`;
+}
+
+function rgbToHex(rgb){
+  return '#' + rgb.map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+// ---------- Nombre de color habitual (el que diría una persona al verlo) ----------
+
+const NAMED_COLORS = {
+  'Blanco': [255, 255, 255],
+  'Gris claro': [200, 200, 200],
+  'Gris': [140, 140, 140],
+  'Gris oscuro': [80, 80, 80],
+  'Negro': [15, 15, 15],
+  'Azul cielo': [135, 195, 230],
+  'Azul': [50, 100, 175],
+  'Azul marino': [25, 45, 90],
+  'Turquesa': [30, 150, 170],
+  'Verde claro': [150, 200, 110],
+  'Verde': [70, 140, 70],
+  'Verde oscuro': [30, 80, 45],
+  'Verde oliva': [125, 125, 75],
+  'Amarillo': [240, 215, 60],
+  'Ocre': [190, 150, 70],
+  'Naranja': [230, 130, 45],
+  'Rojo': [195, 50, 45],
+  'Rosa': [225, 140, 160],
+  'Marrón': [110, 70, 45],
+  'Tierra': [140, 100, 65],
+  'Beige': [210, 190, 160],
+  'Violeta': [110, 70, 150]
+};
+const ACHROMATIC_NAMES = ['Blanco', 'Gris claro', 'Gris', 'Gris oscuro', 'Negro'];
+
+function hueDiff(a, b){
+  const d = Math.abs(a - b);
+  return Math.min(d, 360 - d);
+}
+
+function commonColorName(rgb){
+  const { h, s, v } = rgbToHsv(rgb[0], rgb[1], rgb[2]);
+  // colores casi sin matiz, o muy oscuros con solo una pizca de matiz:
+  // se nombran solo por su claridad, no por el tono (un negro con un
+  // reflejo azulado sigue siendo "negro" para una persona, no "violeta")
+  const isAchromatic = s < 0.15 || (v < 0.30 && s < 0.30);
+  if(isAchromatic){
+    if(v > 0.92) return 'Blanco';
+    if(v > 0.62) return 'Gris claro';
+    if(v > 0.32) return 'Gris';
+    if(v > 0.10) return 'Gris oscuro';
+    return 'Negro';
+  }
+  // colores con matiz: se comparan primero por tono (familia de color),
+  // y solo en segundo término por claridad/saturación
+  let best = '', bestScore = Infinity;
+  for(const name in NAMED_COLORS){
+    if(ACHROMATIC_NAMES.includes(name)) continue;
+    const ref = NAMED_COLORS[name];
+    const rhsv = rgbToHsv(ref[0], ref[1], ref[2]);
+    const dh = hueDiff(h, rhsv.h) / 180;
+    const dv = v - rhsv.v;
+    const ds = s - rhsv.s;
+    const score = dh*dh*9.0 + dv*dv*0.6 + ds*ds*0.3;
+    if(score < bestScore){ bestScore = score; best = name; }
+  }
+  return best;
+}
+
+// ---------- Color resultante de la mezcla (con pigmentos de referencia reales) ----------
+
+const REF_COLORS = {
+  'Amarillo': [255, 220, 0],
+  'Magenta': [200, 20, 100],
+  'Cian': [0, 120, 190],
+  'Blanco': [255, 255, 255],
+  'Negro': [20, 20, 20]
+};
+
+function mixAbsorption(parts){
+  // parts: [[nombre, peso], ...] con pesos que suman 1
+  let acc = [0, 0, 0];
+  parts.forEach(([name, weight]) => {
+    const ref = REF_COLORS[name];
+    if(!ref || weight <= 0) return;
+    acc[0] += weight * (1 - ref[0] / 255);
+    acc[1] += weight * (1 - ref[1] / 255);
+    acc[2] += weight * (1 - ref[2] / 255);
+  });
+  return acc.map(a => Math.round(255 * (1 - Math.min(1, Math.max(0, a)))));
+}
+
+function mixedResultColor(rgb){
+  const { h, s, v } = rgbToHsv(rgb[0], rgb[1], rgb[2]);
+  const pigment = s * v, white = (1 - s) * v, black = 1 - v;
+  const hw = hueMix(h);
+  const parts = Object.entries(hw).map(([name, w]) => [name, w * pigment]);
+  parts.push(['Blanco', white]);
+  parts.push(['Negro', black]);
+  return mixAbsorption(parts);
+}
+
+function mixedResultColorLapiz(rgb){
+  const dists = Object.entries(PENCILS).map(([name, p]) => {
+    const d = Math.sqrt((rgb[0]-p[0])**2 + (rgb[1]-p[1])**2 + (rgb[2]-p[2])**2);
+    return [d, name, p];
+  }).sort((a, b) => a[0] - b[0]);
+  const [_, n1, p1] = dists[0];
+  const [__, n2, p2] = dists[1];
+  return [0,1,2].map(i => Math.round(p1[i]*0.65 + p2[i]*0.35));
+}
+
+function resultColorFor(rgb){
+  if(currentMedium === 'lapiz') return mixedResultColorLapiz(rgb);
+  return mixedResultColor(rgb);
+}
+
+function compareHtml(originalRgb){
+  const resultRgb = resultColorFor(originalRgb);
+  return `
+    <div class="compare">
+      <div class="compare-item">
+        <div class="compare-swatch" style="background:${rgbToHex(originalRgb)}"></div>
+        <span class="compare-label">Objetivo</span>
+      </div>
+      <div class="compare-item">
+        <div class="compare-swatch" style="background:${rgbToHex(resultRgb)}"></div>
+        <span class="compare-label">Mezcla real aprox.</span>
+      </div>
+    </div>`;
+}
+
+// ---------- Render ----------
+
+function renderResults(){
+  const container = document.getElementById('results');
+  if(dominantColors.length === 0){
+    container.innerHTML = '<div class="empty">Todavía no hay ninguna foto analizada.</div>';
+    return;
+  }
+  container.innerHTML = '';
+  dominantColors.forEach((c, i) => {
+    const hex = rgbToHex(c.rgb);
+    let recipeText;
+    if(currentMedium === 'oleo') recipeText = oleoRecipe(c.rgb);
+    else if(currentMedium === 'acuarela') recipeText = acuarelaRecipe(c.rgb);
+    else recipeText = lapizRecipe(c.rgb);
+
+    const rgbText = `RGB(${c.rgb[0]}, ${c.rgb[1]}, ${c.rgb[2]}) · ${commonColorName(c.rgb)}`;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="badge">${i + 1}</div>
+      <div class="swatch" style="background:${hex}"></div>
+      <div class="info">
+        <div class="pct">${rgbText} · ${Math.round(c.pct)}% de la foto</div>
+        <div class="recipe">${recipeText}</div>
+        ${compareHtml(c.rgb)}
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+document.getElementById('preview').addEventListener('click', function(e){
+  const img = document.getElementById('preview');
+  const rect = img.getBoundingClientRect();
+  const fx = (e.clientX - rect.left) / rect.width;
+  const fy = (e.clientY - rect.top) / rect.height;
+  if(fx < 0 || fx > 1 || fy < 0 || fy > 1) return;
+
+  const px = Math.min(fullCanvas.width - 1, Math.round(fx * fullCanvas.width));
+  const py = Math.min(fullCanvas.height - 1, Math.round(fy * fullCanvas.height));
+  const data = fullCanvas.getContext('2d').getImageData(px, py, 1, 1).data;
+  pickedColor = [data[0], data[1], data[2]];
+
+  const marker = document.getElementById('pickMarker');
+  marker.style.left = (fx * 100) + '%';
+  marker.style.top = (fy * 100) + '%';
+  marker.style.display = 'block';
+
+  renderPicked();
+});
+
+function renderPicked(){
+  const existing = document.getElementById('pickedResult');
+  if(existing) existing.remove();
+  if(!pickedColor) return;
+
+  let recipeText;
+  if(currentMedium === 'oleo') recipeText = oleoRecipe(pickedColor);
+  else if(currentMedium === 'acuarela') recipeText = acuarelaRecipe(pickedColor);
+  else recipeText = lapizRecipe(pickedColor);
+
+  const hex = rgbToHex(pickedColor);
+  const rgbText = `RGB(${pickedColor[0]}, ${pickedColor[1]}, ${pickedColor[2]}) · ${commonColorName(pickedColor)}`;
+  const card = document.createElement('div');
+  card.className = 'card picked-card';
+  card.id = 'pickedResult';
+  card.innerHTML = `
+    <div class="swatch" style="background:${hex}"></div>
+    <div class="info">
+      <div class="pct">Color elegido a mano · ${rgbText}</div>
+      <div class="recipe">${recipeText}</div>
+      ${compareHtml(pickedColor)}
+    </div>`;
+  document.getElementById('results').prepend(card);
+}
+
+// ---------- Simulación de daltonismo: Machado, Oliveira y Fernandes (2009) ----------
+// Matrices publicadas en el paper (severidad 1.0, dicromacia completa),
+// aplicadas en espacio RGB lineal, tal como se describe en el artículo original.
+
+// Tabla 1 completa del paper original (severidades 0.0 a 1.0, paso 0.1),
+// tomada directamente de la página de los autores:
+// https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_Simulation/CVD_Simulation.html
+const CVD_TABLE = {
+  protanomaly: [
+    [[1,0,0],[0,1,0],[0,0,1]],
+    [[0.856167,0.182038,-0.038205],[0.029342,0.955115,0.015544],[-0.002880,-0.001563,1.004443]],
+    [[0.734766,0.334872,-0.069637],[0.051840,0.919198,0.028963],[-0.004928,-0.004209,1.009137]],
+    [[0.630323,0.465641,-0.095964],[0.069181,0.890046,0.040773],[-0.006308,-0.007724,1.014032]],
+    [[0.539009,0.579343,-0.118352],[0.082546,0.866121,0.051332],[-0.007136,-0.011959,1.019095]],
+    [[0.458064,0.679578,-0.137642],[0.092785,0.846313,0.060902],[-0.007494,-0.016807,1.024301]],
+    [[0.385450,0.769005,-0.154455],[0.100526,0.829802,0.069673],[-0.007442,-0.022190,1.029632]],
+    [[0.319627,0.849633,-0.169261],[0.106241,0.815969,0.077790],[-0.007025,-0.028051,1.035076]],
+    [[0.259411,0.923008,-0.182420],[0.110296,0.804340,0.085364],[-0.006276,-0.034346,1.040622]],
+    [[0.203876,0.990338,-0.194214],[0.112975,0.794542,0.092483],[-0.005222,-0.041043,1.046265]],
+    [[0.152286,1.052583,-0.204868],[0.114503,0.786281,0.099216],[-0.003882,-0.048116,1.051998]]
+  ],
+  deuteranomaly: [
+    [[1,0,0],[0,1,0],[0,0,1]],
+    [[0.866435,0.177704,-0.044139],[0.049567,0.939063,0.011370],[-0.003453,0.007233,0.996220]],
+    [[0.760729,0.319078,-0.079807],[0.090568,0.889315,0.020117],[-0.006027,0.013325,0.992702]],
+    [[0.675425,0.433850,-0.109275],[0.125303,0.847755,0.026942],[-0.007950,0.018572,0.989378]],
+    [[0.605511,0.528560,-0.134071],[0.155318,0.812366,0.032316],[-0.009376,0.023176,0.986200]],
+    [[0.547494,0.607765,-0.155259],[0.181692,0.781742,0.036566],[-0.010410,0.027275,0.983136]],
+    [[0.498864,0.674741,-0.173604],[0.205199,0.754872,0.039929],[-0.011131,0.030969,0.980162]],
+    [[0.457771,0.731899,-0.189670],[0.226409,0.731012,0.042579],[-0.011595,0.034333,0.977261]],
+    [[0.422823,0.781057,-0.203881],[0.245752,0.709602,0.044646],[-0.011843,0.037423,0.974421]],
+    [[0.392952,0.823610,-0.216562],[0.263559,0.690210,0.046232],[-0.011910,0.040281,0.971630]],
+    [[0.367322,0.860646,-0.227968],[0.280085,0.672501,0.047413],[-0.011820,0.042940,0.968881]]
+  ],
+  tritanomaly: [
+    [[1,0,0],[0,1,0],[0,0,1]],
+    [[0.926670,0.092514,-0.019184],[0.021191,0.964503,0.014306],[0.008437,0.054813,0.936750]],
+    [[0.895720,0.133330,-0.029050],[0.029997,0.945400,0.024603],[0.013027,0.104707,0.882266]],
+    [[0.905871,0.127791,-0.033662],[0.026856,0.941251,0.031893],[0.013410,0.148296,0.838294]],
+    [[0.948035,0.089490,-0.037526],[0.014364,0.946792,0.038844],[0.010853,0.193991,0.795156]],
+    [[1.017277,0.027029,-0.044306],[-0.006113,0.958479,0.047634],[0.006379,0.248708,0.744913]],
+    [[1.104996,-0.046633,-0.058363],[-0.032137,0.971635,0.060503],[0.001336,0.317922,0.680742]],
+    [[1.193214,-0.109812,-0.083402],[-0.058496,0.979410,0.079086],[-0.002346,0.403492,0.598854]],
+    [[1.257728,-0.139648,-0.118081],[-0.078003,0.975409,0.102594],[-0.003316,0.501214,0.502102]],
+    [[1.278864,-0.125333,-0.153531],[-0.084748,0.957674,0.127074],[-0.000989,0.601151,0.399838]],
+    [[1.255528,-0.076749,-0.178779],[-0.078411,0.930809,0.147602],[0.004733,0.691367,0.303900]]
+  ]
+};
+// nombres usados en la UI -> claves de la tabla (dicromacia completa = severidad 1.0)
+const CVD_TABLE_KEY = { protanopia: 'protanomaly', deuteranopia: 'deuteranomaly', tritanopia: 'tritanomaly' };
+
+// Interpolación entre las dos matrices de severidad más cercanas (pasos de 0.1),
+// tal como recomiendan los propios autores en su página: es la aproximación
+// que ellos mismos consideran rápida y muy precisa para este tamaño de paso.
+function cvdMatrixForSeverity(type, severity){
+  const table = CVD_TABLE[CVD_TABLE_KEY[type]];
+  const s = Math.min(1, Math.max(0, severity)) * 10;
+  const i1 = Math.floor(s), i2 = Math.ceil(s);
+  if(i1 === i2) return table[i1];
+  const w2 = s - i1, w1 = i2 - s;
+  const m1 = table[i1], m2 = table[i2];
+  const out = [];
+  for(let r = 0; r < 3; r++){
+    out.push([0,1,2].map(c => m1[r][c]*w1 + m2[r][c]*w2));
+  }
+  return out;
+}
+
+function srgbToLinear(c){
+  c = c / 255;
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+function linearToSrgb(c){
+  const s = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1/2.4) - 0.055;
+  return Math.min(255, Math.max(0, Math.round(s * 255)));
+}
+
+let currentSeverity = 1.0;
+
+function simulateCvd(rgb, type){
+  if(type === 'none') return rgb.slice();
+  const m = cvdMatrixForSeverity(type, currentSeverity);
+  const lin = rgb.map(srgbToLinear);
+  return m.map(row => linearToSrgb(row[0]*lin[0] + row[1]*lin[1] + row[2]*lin[2]));
+}
+
+// Daltonización: algoritmo de Fidaner, Lin y Özgüven (2005), el mismo que usa
+// GIMP en su filtro de daltonismo. Redistribuye hacia azul/verde la información
+// de color que la simulación indica que se pierde con esa deficiencia.
+function daltonizeColor(rgb, type){
+  if(type === 'none') return rgb.slice();
+  const sim = simulateCvd(rgb, type);
+  const err = [rgb[0]-sim[0], rgb[1]-sim[1], rgb[2]-sim[2]];
+  const corrG = 0.7*err[0] + 1.0*err[1];
+  const corrB = 0.7*err[0] + 1.0*err[2];
+  return [
+    Math.min(255, Math.max(0, Math.round(rgb[0]))),
+    Math.min(255, Math.max(0, Math.round(rgb[1] + corrG))),
+    Math.min(255, Math.max(0, Math.round(rgb[2] + corrB)))
+  ];
+}
+
+// color que se muestra en pantalla según el modo elegido
+function displayColorFor(rgb, type, mode){
+  if(mode === 'adaptar') return daltonizeColor(rgb, type);
+  return simulateCvd(rgb, type);
+}
+// color que percibiría de verdad la persona con esa deficiencia al mirar lo que se muestra
+function perceivedByPatient(rgb, type, mode){
+  if(mode === 'adaptar') return simulateCvd(daltonizeColor(rgb, type), type);
+  return simulateCvd(rgb, type);
+}
+
+let currentCvd = 'none';
+let currentCvdMode = 'simular';
+
+function updateCvdView(){
+  const canvas = document.getElementById('cvdCanvas');
+  const showControls = currentCvd !== 'none';
+  document.getElementById('cvdModeSelector').style.display = showControls ? 'flex' : 'none';
+  document.getElementById('severityControl').style.display = showControls ? 'block' : 'none';
+  if(currentCvd === 'none' || fullCanvas.width === 0){
+    canvas.style.display = 'none';
+    document.getElementById('cvdWarning').innerHTML = '';
+    return;
+  }
+  // vista de la foto completa (simulada o adaptada, según el modo)
+  const w = fullCanvas.width, h = fullCanvas.height;
+  canvas.width = w;
+  canvas.height = h;
+  const srcCtx = fullCanvas.getContext('2d');
+  const dstCtx = canvas.getContext('2d');
+  const imgData = srcCtx.getImageData(0, 0, w, h);
+  const out = dstCtx.createImageData(w, h);
+  for(let i = 0; i < imgData.data.length; i += 4){
+    const shown = displayColorFor([imgData.data[i], imgData.data[i+1], imgData.data[i+2]], currentCvd, currentCvdMode);
+    out.data[i] = shown[0]; out.data[i+1] = shown[1]; out.data[i+2] = shown[2]; out.data[i+3] = 255;
+  }
+  dstCtx.putImageData(out, 0, 0);
+  canvas.style.display = 'block';
+
+  // aviso de qué colores del mapa se confunden, tal y como los percibiría
+  // de verdad la persona al mirar lo que se le está mostrando ahora mismo
+  const warningDiv = document.getElementById('cvdWarning');
+  if(dominantColors.length < 2){ warningDiv.innerHTML = ''; return; }
+  const simColors = dominantColors.map(c => perceivedByPatient(c.rgb, currentCvd, currentCvdMode));
+  const confusable = [];
+  for(let a = 0; a < simColors.length; a++){
+    for(let b = a+1; b < simColors.length; b++){
+      const dx = simColors[a][0]-simColors[b][0], dy = simColors[a][1]-simColors[b][1], dz = simColors[a][2]-simColors[b][2];
+      const d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      if(d < 28) confusable.push(`${a+1} y ${b+1}`);
+    }
+  }
+  const modoTxt = currentCvdMode === 'adaptar' ? 'Con la foto adaptada, todavía' : 'Con esta deficiencia,';
+  if(confusable.length > 0){
+    warningDiv.innerHTML = `<div class="cvd-note">${modoTxt} es fácil confundir los colores: ${confusable.join(' · ')}</div>`;
+  } else {
+    const msg = currentCvdMode === 'adaptar'
+      ? 'Con la foto adaptada, ya no se confunde ningún color del mapa entre sí.'
+      : 'Ninguno de los colores del mapa se confunde con otro bajo esta deficiencia.';
+    warningDiv.innerHTML = `<div class="cvd-note">${msg}</div>`;
+  }
+}
+
+document.getElementById('severitySlider').addEventListener('input', function(){
+  currentSeverity = parseFloat(this.value);
+  const label = currentSeverity >= 0.98 ? `${currentSeverity.toFixed(2)} (dicromacia completa)`
+              : currentSeverity <= 0.02 ? `${currentSeverity.toFixed(2)} (visión normal)`
+              : `${currentSeverity.toFixed(2)} (tricromacia anómala)`;
+  document.getElementById('severityValue').textContent = label;
+  updateCvdView();
+});
+
+document.querySelectorAll('[data-cvdmode]').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('[data-cvdmode]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCvdMode = btn.dataset.cvdmode;
+    updateCvdView();
+  });
+});
+
+document.querySelectorAll('[data-cvd]').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('[data-cvd]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCvd = btn.dataset.cvd;
+    updateCvdView();
+  });
+});
+
+document.querySelectorAll('[data-medium]').forEach(btn => {
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('[data-medium]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMedium = btn.dataset.medium;
+    renderResults();
+    renderPicked();
+  });
+});
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(err => {
+      console.log('No se pudo registrar el service worker:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
